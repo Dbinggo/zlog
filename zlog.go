@@ -3,7 +3,6 @@ package zlog
 import (
 	"context"
 	"fmt"
-	"github.com/dbinggo/zlog/utils"
 	"github.com/zeromicro/go-zero/core/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -35,13 +34,15 @@ type zlogger struct {
 // 全局logger 没有在上下问中找到logger会用这个
 var globalZapLogger *zap.Logger = new(zap.Logger)
 var formatJson = "json"
+var basePath = ""
 
 // SetLogger 注册logger
-func SetLogger(zapLogger *zap.Logger, json bool) {
+func SetLogger(zapLogger *zap.Logger, json bool, path string) {
 	globalZapLogger = zapLogger
 	if !json {
 		formatJson = "plain"
 	}
+	basePath = path
 }
 func NewLogger() *zlogger {
 	return &zlogger{
@@ -160,7 +161,7 @@ func (l *zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
 	format := "%s:%d"
 	_, file, line, _ := runtime.Caller(l.getCallerSkip())
 	_v := make([]interface{}, 0)
-	file = file[len(utils.GetRootPath(""))+1:]
+	file = file[len(basePath)+1:]
 	_v = append(_v, file, line)
 	if l.formatJson() {
 		_logger = _logger.With(zap.String(loggerCallerKey, fmt.Sprintf(format, file, line)))

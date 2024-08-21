@@ -6,7 +6,7 @@ import (
 	"github.com/zeromicro/go-zero/rest"
 )
 
-func InitLogger(rest rest.RestConf) {
+func InitLogger(rest rest.RestConf, basePath string) {
 	// zap 配置
 	var zapConfig = ZapConfig{
 		// 是否为 json格式
@@ -24,7 +24,7 @@ func InitLogger(rest rest.RestConf) {
 	}
 
 	logger := GetLogger(zapConfig)
-	zlog.SetLogger(logger, rest.Log.Encoding == "json")
+	zlog.SetLogger(logger, rest.Log.Encoding == "json", basePath)
 	zlogger := zlog.NewLogger()
 	var zapWriter logx.Writer
 	zapWriter = zlog.NewZeroLogger(zlogger, rest.Log.Encoding == "json")

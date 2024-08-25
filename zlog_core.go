@@ -24,7 +24,18 @@ const (
 
 )
 
-type zlogger struct {
+// 这是一个 最底层的对象 其余接口实现的对象都调用此对象
+/*
+	-----------------   	-----------------
+	｜  zeroWriter  ｜		｜  gormLogger  ｜
+	-----------------		-----------------
+			｜						｜
+			——————————————————————————
+						｜
+		          --------------
+				  ｜  Zlogger  ｜
+*/
+type Zlogger struct {
 	prefix     string
 	format     string
 	ctx        context.Context
@@ -44,8 +55,8 @@ func SetLogger(zapLogger *zap.Logger, json bool, path string) {
 	}
 	basePath = path
 }
-func NewLogger() *zlogger {
-	return &zlogger{
+func NewLogger() *Zlogger {
+	return &Zlogger{
 		format:     formatJson,
 		ctx:        context.Background(),
 		callerSkip: 0,
@@ -68,75 +79,75 @@ func withContext(ctx context.Context) zap.Logger {
 // ###########################################
 // 可以直接通过 包名来使用
 func DebugfCtx(ctx context.Context, format string, v ...any) {
-	l := &zlogger{ctx: ctx, format: formatJson}
+	l := &Zlogger{ctx: ctx, format: formatJson}
 	l.WithCallerSkip(4).debugf(format, v...)
 }
 func Debugf(format string, v ...any) {
-	l := &zlogger{ctx: context.Background(), format: formatJson}
+	l := &Zlogger{ctx: context.Background(), format: formatJson}
 	l.WithCallerSkip(4).debugf(format, v...)
 
 }
 func InfofCtx(ctx context.Context, format string, v ...any) {
-	l := &zlogger{ctx: ctx, format: formatJson}
+	l := &Zlogger{ctx: ctx, format: formatJson}
 	l.WithCallerSkip(4).infof(format, v...)
 }
 func Infof(format string, v ...any) {
-	l := &zlogger{ctx: context.Background(), format: formatJson}
+	l := &Zlogger{ctx: context.Background(), format: formatJson}
 	l.WithCallerSkip(4).infof(format, v...)
 
 }
 func WarnfCtx(ctx context.Context, format string, v ...any) {
-	l := &zlogger{ctx: ctx, format: formatJson}
+	l := &Zlogger{ctx: ctx, format: formatJson}
 	l.WithCallerSkip(4).warnf(format, v...)
 }
 func Warnf(format string, v ...any) {
-	l := &zlogger{ctx: context.Background(), format: formatJson}
+	l := &Zlogger{ctx: context.Background(), format: formatJson}
 	l.WithCallerSkip(4).warnf(format, v...)
 
 }
 func ErrorfCtx(ctx context.Context, format string, v ...any) {
-	l := &zlogger{ctx: ctx, format: formatJson}
+	l := &Zlogger{ctx: ctx, format: formatJson}
 	l.WithCallerSkip(4).errorf(format, v...)
 }
 func Errorf(format string, v ...any) {
-	l := &zlogger{ctx: context.Background(), format: formatJson}
+	l := &Zlogger{ctx: context.Background(), format: formatJson}
 	l.WithCallerSkip(4).errorf(format, v...)
 
 }
 
 // ###########################################
 // 通过对象来使用
-func (l *zlogger) Debugf(format string, v ...any) {
+func (l *Zlogger) Debugf(format string, v ...any) {
 	l.WithCallerSkip(4).debugf(format, v)
 }
-func (l *zlogger) Infof(format string, v ...any) {
+func (l *Zlogger) Infof(format string, v ...any) {
 	l.WithCallerSkip(4).infof(format, v)
 }
-func (l *zlogger) Warnf(format string, v ...any) {
+func (l *Zlogger) Warnf(format string, v ...any) {
 	l.WithCallerSkip(4).warnf(format, v)
 }
-func (l *zlogger) Errorf(format string, v ...any) {
+func (l *Zlogger) Errorf(format string, v ...any) {
 	l.WithCallerSkip(4).errorf(format, v)
 }
 
 // ###########################################
 // 内部方法
-func (l *zlogger) debugf(format string, v ...any) {
+func (l *Zlogger) debugf(format string, v ...any) {
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Debug(fmt.Sprintf(exString+format, v...))
 }
-func (l *zlogger) infof(format string, v ...any) {
+func (l *Zlogger) infof(format string, v ...any) {
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Info(fmt.Sprintf(exString+format, v...))
 }
-func (l *zlogger) warnf(format string, v ...any) {
+func (l *Zlogger) warnf(format string, v ...any) {
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Warn(fmt.Sprintf(exString+format, v...))
 }
-func (l *zlogger) errorf(format string, v ...any) {
+func (l *Zlogger) errorf(format string, v ...any) {
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Error(fmt.Sprintf(exString+format, v...))
@@ -146,18 +157,18 @@ func (l *zlogger) errorf(format string, v ...any) {
 
 // ###########################################
 // 通用功能方法
-func (l *zlogger) getCallerSkip() int {
+func (l *Zlogger) getCallerSkip() int {
 	if l.callerSkip == 0 {
 		return 3
 	}
 	return l.callerSkip
 }
 
-func (l *zlogger) formatJson() bool {
+func (l *Zlogger) formatJson() bool {
 	return l.format == "json"
 }
 
-func (l *zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
+func (l *Zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
 	format := "%s:%d"
 	_, file, line, _ := runtime.Caller(l.getCallerSkip())
 	_v := make([]interface{}, 0)
@@ -170,7 +181,7 @@ func (l *zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
 	return *_logger, fmt.Sprintf(format+"\t", _v...)
 }
 
-func (l *zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
+func (l *Zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
 	traceId := trace.TraceIDFromContext(ctx)
 	if traceId == "" {
 		return *_logger, ""
@@ -182,7 +193,7 @@ func (l *zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger
 	format := "%v\t"
 	return *_logger, fmt.Sprintf(format, traceId)
 }
-func (l *zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
+func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
 
 	spanId := trace.SpanIDFromContext(ctx)
 	if spanId == "" {
@@ -195,7 +206,7 @@ func (l *zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger,
 	format := "%v\t"
 	return *_logger, fmt.Sprintf(format, spanId)
 }
-func (l *zlogger) addExField(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
+func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap map[string]string) (zap.Logger, string) {
 	if exField := ctx.Value(loggerFieldKey); exField != nil {
 		if l.formatJson() {
 			_logger = _logger.With(exField.([]zapcore.Field)...)
@@ -204,11 +215,15 @@ func (l *zlogger) addExField(ctx context.Context, _logger *zap.Logger) (zap.Logg
 			format := "%v\t"
 			ret := ""
 			for _, field := range exField.([]zapcore.Field) {
-				ret += fmt.Sprintf(format, field.String)
+				// 如果传入的 fieldMap 含有这个key 那么就用fieldMap中的值
+				if fieldString, exit := fieldMap[field.Key]; exit {
+					ret += fmt.Sprintf(format, fieldString)
+				} else {
+					ret += fmt.Sprintf(format, field)
+				}
 			}
 			return *_logger, ret
 		}
-
 	}
 	return *_logger, ""
 }
@@ -226,46 +241,60 @@ func AddFiled(ctx context.Context, fields ...zapcore.Field) context.Context {
 //}
 
 // 构建 field
-func (l *zlogger) buildField(logger *zap.Logger) (zap.Logger, string) {
-	// 加入 caller
+func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logger, string) {
+	// 如果外部有传入 相关字段那就用外面传入的 如果没有用自己的
+	fieldMap := make(map[string]string)
+	for _, field := range fields {
+		fieldMap[field.Key] = field.String
+	}
+
 	var (
 		caller  string
 		traceId string
 		spanId  string
 		field   string
+		exist   bool
+		newLine string
 	)
-	*logger, caller = l.addCaller(logger)
-	*logger, traceId = l.addTrace(l.ctx, logger)
-	*logger, spanId = l.addSpan(l.ctx, logger)
-	*logger, field = l.addExField(l.ctx, logger)
-	newLine := "\n"
+	// 如果map 中不存在 caller 那么使用自己的caller
+	if caller, exist = fieldMap["caller"]; !exist || l.formatJson() {
+		*logger, caller = l.addCaller(logger)
+	}
+	if traceId, exist = fieldMap["trace"]; !exist || l.formatJson() {
+		*logger, traceId = l.addTrace(l.ctx, logger)
+	}
+	if spanId, exist = fieldMap["span"]; !exist || l.formatJson() {
+		*logger, spanId = l.addSpan(l.ctx, logger)
+	}
+	*logger, field = l.addExField(l.ctx, logger, fieldMap)
 	if l.formatJson() {
 		newLine = ""
-
+	} else {
+		newLine = "\n"
 	}
 	return *logger, caller + traceId + spanId + field + newLine
 }
 
 // WithCallerSkip  携带跳过的层数
-func (l *zlogger) WithCallerSkip(skip int) *zlogger {
+func (l *Zlogger) WithCallerSkip(skip int) *Zlogger {
 	if skip <= 0 {
 		return l
 	}
-	return &zlogger{
+	return &Zlogger{
 		ctx:        l.ctx,
 		callerSkip: skip,
 		format:     l.format,
 		prefix:     l.prefix,
 	}
 }
-func (l *zlogger) Sync() error {
+func (l *Zlogger) Sync() error {
 	logger := withContext(l.ctx)
 	return logger.Sync()
 }
 
 // WithContext 携带上下文
-func (l *zlogger) WithContext(ctx context.Context) *zlogger {
-	return &zlogger{
+func (l *Zlogger) WithContext(ctx context.Context) *Zlogger {
+	return &Zlogger{
 		ctx:        ctx,
 		callerSkip: l.callerSkip,
 		format:     l.format,
@@ -274,19 +303,23 @@ func (l *zlogger) WithContext(ctx context.Context) *zlogger {
 }
 
 // 供外部方法使用
-func (l *zlogger) debugField(msg string, fields ...zap.Field) {
+func (l *Zlogger) debugField(msg string, fields ...zap.Field) {
 	logger := withContext(l.ctx)
-	logger.Debug(msg, fields...)
+	logger, exString := l.buildField(&logger, fields...)
+	logger.Debug(fmt.Sprintf(exString + msg))
 }
-func (l *zlogger) infoField(msg string, fields ...zap.Field) {
+func (l *Zlogger) infoField(msg string, fields ...zap.Field) {
 	logger := withContext(l.ctx)
-	logger.Info(msg, fields...)
+	logger, exString := l.buildField(&logger, fields...)
+	logger.Info(fmt.Sprintf(exString + msg))
 }
-func (l *zlogger) warnField(msg string, fields ...zap.Field) {
+func (l *Zlogger) warnField(msg string, fields ...zap.Field) {
 	logger := withContext(l.ctx)
-	logger.Warn(msg, fields...)
+	logger, exString := l.buildField(&logger, fields...)
+	logger.Warn(fmt.Sprintf(exString + msg))
 }
-func (l *zlogger) errorField(msg string, fields ...zap.Field) {
+func (l *Zlogger) errorField(msg string, fields ...zap.Field) {
 	logger := withContext(l.ctx)
-	logger.Error(msg, fields...)
+	logger, exString := l.buildField(&logger, fields...)
+	logger.Error(fmt.Sprintf(exString + msg))
 }

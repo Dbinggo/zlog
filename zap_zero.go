@@ -19,99 +19,63 @@ import (
 //		Stack(v any)
 //		Stat(v any, fields ...LogField)
 //	}
-type zeroLogger struct {
-	logger     *zlogger
-	formatJson bool
+type zeroWriter struct {
+	logger *Zlogger
 }
 
-var _ logx.Writer = (*zeroLogger)(nil) // 接口实现检查
-func NewZeroLogger(logger *zlogger, formatJson bool) logx.Writer {
-	return &zeroLogger{logger: logger, formatJson: formatJson}
+var _ logx.Writer = (*zeroWriter)(nil) // 接口实现检查
+func NewZeroWriter(logger *Zlogger) logx.Writer {
+	return &zeroWriter{logger: logger}
 }
 
-func (l *zeroLogger) Alert(v interface{}) {
+func (l *zeroWriter) Alert(v interface{}) {
 	l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v))
 }
 
-func (l *zeroLogger) Close() error {
+func (l *zeroWriter) Close() error {
 	return l.logger.Sync()
 }
 
-func (l *zeroLogger) Debug(v interface{}, fields ...logx.LogField) {
-	if l.formatJson {
-		l.logger.WithCallerSkip(6).debugField(fmt.Sprint(v), toZapFields(fields...)...)
-	} else {
-		exString := ""
-		for _, field := range fields {
-			exString += "\t" + fmt.Sprint(field.Value)
-		}
-		exString += "\n"
-		l.logger.WithCallerSkip(6).debugField(exString + fmt.Sprint(v))
-	}
+func (l *zeroWriter) Debug(v interface{}, fields ...logx.LogField) {
+
+	l.logger.WithCallerSkip(6).debugField(fmt.Sprint(v), toZapFields(fields...)...)
+
 }
 
-func (l *zeroLogger) Error(v interface{}, fields ...logx.LogField) {
-	if l.formatJson {
-		l.logger.WithCallerSkip(6).errorField(fmt.Sprint(v), toZapFields(fields...)...)
-	} else {
-		exString := ""
-		for _, field := range fields {
-			exString += "\t" + fmt.Sprint(field.Value)
-		}
-		exString += "\n"
-		l.logger.WithCallerSkip(6).errorField(exString + fmt.Sprint(v))
-	}
+func (l *zeroWriter) Error(v interface{}, fields ...logx.LogField) {
+
+	l.logger.WithCallerSkip(6).errorField(fmt.Sprint(v), toZapFields(fields...)...)
+
 }
 
-func (l *zeroLogger) Info(v interface{}, fields ...logx.LogField) {
-	if l.formatJson {
-		l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
-	} else {
-		exString := ""
-		for _, field := range fields {
-			exString += "\t" + fmt.Sprint(field.Value)
-		}
-		exString += "\n"
-		l.logger.WithCallerSkip(6).infoField(exString + fmt.Sprint(v))
-	}
+func (l *zeroWriter) Info(v interface{}, fields ...logx.LogField) {
+
+	l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
+
 }
 
-func (l *zeroLogger) Severe(v interface{}) {
+func (l *zeroWriter) Severe(v interface{}) {
 	l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v))
 }
 
-func (l *zeroLogger) Slow(v interface{}, fields ...logx.LogField) {
-	if l.formatJson {
-		l.logger.WithCallerSkip(6).warnField(fmt.Sprint(v), toZapFields(fields...)...)
-	} else {
-		exString := ""
-		for _, field := range fields {
-			exString += "\t" + fmt.Sprint(field.Value)
-		}
-		exString += "\n"
-		l.logger.WithCallerSkip(6).warnField(exString + fmt.Sprint(v))
-	}
+func (l *zeroWriter) Slow(v interface{}, fields ...logx.LogField) {
+
+	l.logger.WithCallerSkip(6).warnField(fmt.Sprint(v), toZapFields(fields...)...)
+
 }
 
-func (l *zeroLogger) Stack(v interface{}) {
-	if l.formatJson {
+func (l *zeroWriter) Stack(v interface{}) {
+	if l.logger.formatJson() {
 		l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v), zap.Stack("stack"))
 	} else {
 		l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v))
 	}
 }
 
-func (l *zeroLogger) Stat(v interface{}, fields ...logx.LogField) {
-	if l.formatJson {
-		l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
-	} else {
-		exString := ""
-		for _, field := range fields {
-			exString += "\t" + fmt.Sprint(field.Value)
-		}
-		exString += "\n"
-		l.logger.WithCallerSkip(6).infoField(exString + fmt.Sprint(v))
-	}
+func (l *zeroWriter) Stat(v interface{}, fields ...logx.LogField) {
+
+	l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
+
 }
 
 func toZapFields(fields ...logx.LogField) []zap.Field {

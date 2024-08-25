@@ -9,7 +9,6 @@ import (
 )
 
 func TestZlog(t *testing.T) {
-	zapLogger := zapx.Develop()
 	SetLogger(zapLogger, false)
 	ctx := context.Background()
 	ctx = AddFiled(ctx, zap.String("traceId", "123456"))

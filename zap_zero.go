@@ -41,7 +41,12 @@ func (l *zeroLogger) Debug(v interface{}, fields ...logx.LogField) {
 	if l.formatJson {
 		l.logger.WithCallerSkip(6).debugField(fmt.Sprint(v), toZapFields(fields...)...)
 	} else {
-		l.logger.WithCallerSkip(6).debugf(fmt.Sprint(v))
+		exString := ""
+		for _, field := range fields {
+			exString += "\t" + fmt.Sprint(field.Value)
+		}
+		exString += "\n"
+		l.logger.WithCallerSkip(6).debugField(exString + fmt.Sprint(v))
 	}
 }
 
@@ -49,7 +54,12 @@ func (l *zeroLogger) Error(v interface{}, fields ...logx.LogField) {
 	if l.formatJson {
 		l.logger.WithCallerSkip(6).errorField(fmt.Sprint(v), toZapFields(fields...)...)
 	} else {
-		l.logger.errorf(fmt.Sprint(v))
+		exString := ""
+		for _, field := range fields {
+			exString += "\t" + fmt.Sprint(field.Value)
+		}
+		exString += "\n"
+		l.logger.WithCallerSkip(6).errorField(exString + fmt.Sprint(v))
 	}
 }
 
@@ -57,7 +67,12 @@ func (l *zeroLogger) Info(v interface{}, fields ...logx.LogField) {
 	if l.formatJson {
 		l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
 	} else {
-		l.logger.WithCallerSkip(6).infof(fmt.Sprint(v))
+		exString := ""
+		for _, field := range fields {
+			exString += "\t" + fmt.Sprint(field.Value)
+		}
+		exString += "\n"
+		l.logger.WithCallerSkip(6).infoField(exString + fmt.Sprint(v))
 	}
 }
 
@@ -69,7 +84,12 @@ func (l *zeroLogger) Slow(v interface{}, fields ...logx.LogField) {
 	if l.formatJson {
 		l.logger.WithCallerSkip(6).warnField(fmt.Sprint(v), toZapFields(fields...)...)
 	} else {
-		l.logger.WithCallerSkip(6).warnf(fmt.Sprint(v))
+		exString := ""
+		for _, field := range fields {
+			exString += "\t" + fmt.Sprint(field.Value)
+		}
+		exString += "\n"
+		l.logger.WithCallerSkip(6).warnField(exString + fmt.Sprint(v))
 	}
 }
 
@@ -85,8 +105,12 @@ func (l *zeroLogger) Stat(v interface{}, fields ...logx.LogField) {
 	if l.formatJson {
 		l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
 	} else {
-		l.logger.WithCallerSkip(6).infof(fmt.Sprint(v))
-
+		exString := ""
+		for _, field := range fields {
+			exString += "\t" + fmt.Sprint(field.Value)
+		}
+		exString += "\n"
+		l.logger.WithCallerSkip(6).infoField(exString + fmt.Sprint(v))
 	}
 }
 

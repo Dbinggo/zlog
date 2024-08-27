@@ -3,6 +3,8 @@ package zlog
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/dbinggo/zlog/zstyle"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -16,14 +18,16 @@ type gormLogger struct {
 
 var _ logger.Interface = (*gormLogger)(nil) // 接口实现检查
 
-//// Interface logger interface
-//type Interface interface {
-//	LogMode(LogLevel) Interface
-//	Info(context.Context, string, ...interface{})
-//	Warn(context.Context, string, ...interface{})
-//	Error(context.Context, string, ...interface{})
-//	Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error)
-//}
+// // Interface logger interface
+//
+//	type Interface interface {
+//		LogMode(LogLevel) Interface
+//		Info(context.Context, string, ...interface{})
+//		Warn(context.Context, string, ...interface{})
+//		Error(context.Context, string, ...interface{})
+//		Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error)
+//	}
+const gormCallerSkip = 0
 
 func NewGormLogger(logger *Zlogger) *gormLogger {
 	return &gormLogger{
@@ -41,7 +45,7 @@ func (l *gormLogger) Info(ctx context.Context, format string, value ...interface
 		return
 	}
 
-	l.logger.WithContext(ctx).WithCallerSkip(6).infof(format, value)
+	l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).infof(format, value)
 }
 
 func (l *gormLogger) Warn(ctx context.Context, format string, value ...interface{}) {
@@ -49,7 +53,7 @@ func (l *gormLogger) Warn(ctx context.Context, format string, value ...interface
 		return
 	}
 
-	l.logger.WithContext(ctx).WithCallerSkip(6).warnf(format, value)
+	l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).warnf(format, value)
 }
 
 func (l *gormLogger) Error(ctx context.Context, format string, value ...interface{}) {
@@ -57,7 +61,7 @@ func (l *gormLogger) Error(ctx context.Context, format string, value ...interfac
 		return
 	}
 
-	l.logger.WithContext(ctx).WithCallerSkip(6).errorf(format, value)
+	l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).errorf(format, value)
 }
 
 func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
@@ -65,7 +69,8 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql 
 	elapsed := time.Since(begin)
 	// 获取 SQL 请求和返回条数
 	sql, rows := fc()
-
+	elapsedString := fmt.Sprintf("[%.3fms]", elapsed.Seconds()*1000)
+	rowsString := fmt.Sprintf("[rows:%v]", rows)
 	// 通用字段
 	logFields := []zap.Field{
 		zap.String("sql", sql),
@@ -77,38 +82,38 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql 
 		// 记录未找到的错误使用 warning 等级
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if l.level >= logger.Warn {
-				if l.logger.formatJson() {
-					l.logger.WithContext(ctx).WithCallerSkip(6).warnField("Database ErrRecordNotFound", logFields...)
+				if l.logger.FormatJson() {
+					l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).warnField("Database ErrRecordNotFound", logFields...)
 				} else {
-					l.logger.WithContext(ctx).WithCallerSkip(6).warnf("Database ErrRecordNotFound sql: %s ,time: %v ,rows: %d", sql, elapsed, rows)
+					l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).warnf("%s %s %s", zstyle.SetStylef(zstyle.Yellow, elapsedString), zstyle.SetStylef(zstyle.Blue, rowsString), zstyle.SetStylef(zstyle.Reset, sql))
 				}
-
 			}
 		} else {
-			// 其他错误使用 error 等级
-			if l.level >= logger.Error {
-				if l.logger.formatJson() {
-					l.logger.WithContext(ctx).WithCallerSkip(6).errorField("Database Error", logFields...)
-				} else {
-					l.logger.WithContext(ctx).WithCallerSkip(6).errorf("Database Error sql: %s ,time: %v ,rows: %d", sql, elapsed, rows)
-				}
-			}
-		}
-	}
 
+			if l.logger.FormatJson() {
+				l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).errorField("Database Error", logFields...)
+			} else {
+				ctx = AddFiled(ctx, zap.String("error", zstyle.SetStylef(zstyle.MagentaBold, err.Error())))
+				l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).errorf("%s %s %s", zstyle.SetStylef(zstyle.Yellow, elapsedString), zstyle.SetStylef(zstyle.Blue, rowsString), zstyle.SetStylef(zstyle.Reset, sql))
+			}
+
+		}
+		return
+	}
 	// 慢查询日志
 	if elapsed > (200 * time.Millisecond) {
-		if l.logger.formatJson() {
-			l.logger.WithContext(ctx).WithCallerSkip(6).warnField("Database Slow Log", logFields...)
+		if l.logger.FormatJson() {
+			l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).warnField("Database Slow Log", logFields...)
 		} else {
-			l.logger.WithContext(ctx).WithCallerSkip(6).warnf("Database Slow Log sql: %s ,time: %v ,rows: %d", sql, elapsed, rows)
+			l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).warnf("%s %s %s", zstyle.SetStylef(zstyle.Yellow, elapsedString), zstyle.SetStylef(zstyle.Blue, rowsString), zstyle.SetStylef(zstyle.Yellow, sql))
 		}
+		return
 	}
 
 	// 记录所有 SQL 请求
-	if l.logger.formatJson() {
-		l.logger.WithContext(ctx).WithCallerSkip(6).infoField("Database Query", logFields...)
+	if l.logger.FormatJson() {
+		l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).debugField("Database Query", logFields...)
 	} else {
-		l.logger.WithContext(ctx).WithCallerSkip(6).infof("Database Query sql: %s ,time: %v ,rows: %d", sql, elapsed, rows)
+		l.logger.WithContext(ctx).WithCallerSkip(gormCallerSkip).debugf("%s %s %s", zstyle.SetStylef(zstyle.Yellow, elapsedString), zstyle.SetStylef(zstyle.Blue, rowsString), zstyle.SetStylef(zstyle.Reset, sql))
 	}
 }

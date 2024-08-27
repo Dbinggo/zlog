@@ -47,6 +47,8 @@ var globalZapLogger *zap.Logger = new(zap.Logger)
 var formatJson = "json"
 var basePath = ""
 
+const coreCallSkip = 4
+
 // SetLogger 注册logger
 func SetLogger(zapLogger *zap.Logger, json bool, path string) {
 	globalZapLogger = zapLogger
@@ -59,7 +61,7 @@ func NewLogger() *Zlogger {
 	return &Zlogger{
 		format:     formatJson,
 		ctx:        context.Background(),
-		callerSkip: 0,
+		callerSkip: 2,
 	}
 }
 
@@ -80,54 +82,54 @@ func withContext(ctx context.Context) zap.Logger {
 // 可以直接通过 包名来使用
 func DebugfCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(4).debugf(format, v...)
+	l.WithCallerSkip(coreCallSkip).debugf(format, v...)
 }
 func Debugf(format string, v ...any) {
 	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(4).debugf(format, v...)
+	l.WithCallerSkip(coreCallSkip).debugf(format, v...)
 
 }
 func InfofCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(4).infof(format, v...)
+	l.WithCallerSkip(coreCallSkip).infof(format, v...)
 }
 func Infof(format string, v ...any) {
 	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(4).infof(format, v...)
+	l.WithCallerSkip(coreCallSkip).infof(format, v...)
 
 }
 func WarnfCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(4).warnf(format, v...)
+	l.WithCallerSkip(coreCallSkip).warnf(format, v...)
 }
 func Warnf(format string, v ...any) {
 	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(4).warnf(format, v...)
+	l.WithCallerSkip(coreCallSkip).warnf(format, v...)
 
 }
 func ErrorfCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(4).errorf(format, v...)
+	l.WithCallerSkip(coreCallSkip).errorf(format, v...)
 }
 func Errorf(format string, v ...any) {
 	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(4).errorf(format, v...)
+	l.WithCallerSkip(coreCallSkip).errorf(format, v...)
 
 }
 
 // ###########################################
 // 通过对象来使用
 func (l *Zlogger) Debugf(format string, v ...any) {
-	l.WithCallerSkip(4).debugf(format, v)
+	l.WithCallerSkip(coreCallSkip).debugf(format, v)
 }
 func (l *Zlogger) Infof(format string, v ...any) {
-	l.WithCallerSkip(4).infof(format, v)
+	l.WithCallerSkip(coreCallSkip).infof(format, v)
 }
 func (l *Zlogger) Warnf(format string, v ...any) {
-	l.WithCallerSkip(4).warnf(format, v)
+	l.WithCallerSkip(coreCallSkip).warnf(format, v)
 }
 func (l *Zlogger) Errorf(format string, v ...any) {
-	l.WithCallerSkip(4).errorf(format, v)
+	l.WithCallerSkip(coreCallSkip).errorf(format, v)
 }
 
 // ###########################################
@@ -164,17 +166,35 @@ func (l *Zlogger) getCallerSkip() int {
 	return l.callerSkip
 }
 
-func (l *Zlogger) formatJson() bool {
+func (l *Zlogger) FormatJson() bool {
 	return l.format == "json"
 }
 
 func (l *Zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
-	format := "%s:%d"
-	_, file, line, _ := runtime.Caller(l.getCallerSkip())
+	callerSkip := l.getCallerSkip()
+	var file string
+	var line int
 	_v := make([]interface{}, 0)
-	file = file[len(basePath)+1:]
+	// 代表溯源到本项目路径
+	if callerSkip == 0 {
+		for i := 0; ; i++ {
+			_, file, line, _ = runtime.Caller(i)
+			if len(file) == len(basePath) && file[:len(basePath)] == basePath {
+				file = file[len(basePath)+1:]
+				break
+			}
+		}
+	} else if callerSkip < 0 {
+		callerSkip = -callerSkip
+		_, file, line, _ = runtime.Caller(callerSkip)
+
+	} else {
+		_, file, line, _ = runtime.Caller(callerSkip)
+		file = file[len(basePath)+1:]
+	}
+	format := "%s:%d"
 	_v = append(_v, file, line)
-	if l.formatJson() {
+	if l.FormatJson() {
 		_logger = _logger.With(zap.String(loggerCallerKey, fmt.Sprintf(format, file, line)))
 		return *_logger, ""
 	}
@@ -186,7 +206,7 @@ func (l *Zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger
 	if traceId == "" {
 		return *_logger, ""
 	}
-	if l.formatJson() {
+	if l.FormatJson() {
 		_logger = _logger.With(zap.String(loggerTraceKey, traceId))
 		return *_logger, ""
 	}
@@ -199,7 +219,7 @@ func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger,
 	if spanId == "" {
 		return *_logger, ""
 	}
-	if l.formatJson() {
+	if l.FormatJson() {
 		_logger = _logger.With(zap.String(loggerSpanKey, spanId))
 		return *_logger, ""
 	}
@@ -208,7 +228,7 @@ func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger,
 }
 func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap map[string]string) (zap.Logger, string) {
 	if exField := ctx.Value(loggerFieldKey); exField != nil {
-		if l.formatJson() {
+		if l.FormatJson() {
 			_logger = _logger.With(exField.([]zapcore.Field)...)
 			return *_logger, ""
 		} else {
@@ -219,7 +239,7 @@ func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap 
 				if fieldString, exit := fieldMap[field.Key]; exit {
 					ret += fmt.Sprintf(format, fieldString)
 				} else {
-					ret += fmt.Sprintf(format, field)
+					ret += fmt.Sprintf(format, field.String)
 				}
 			}
 			return *_logger, ret
@@ -257,17 +277,17 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 		newLine string
 	)
 	// 如果map 中不存在 caller 那么使用自己的caller
-	if caller, exist = fieldMap["caller"]; !exist || l.formatJson() {
+	if caller, exist = fieldMap["caller"]; !exist || l.FormatJson() {
 		*logger, caller = l.addCaller(logger)
 	}
-	if traceId, exist = fieldMap["trace"]; !exist || l.formatJson() {
+	if traceId, exist = fieldMap["trace"]; !exist || l.FormatJson() {
 		*logger, traceId = l.addTrace(l.ctx, logger)
 	}
-	if spanId, exist = fieldMap["span"]; !exist || l.formatJson() {
+	if spanId, exist = fieldMap["span"]; !exist || l.FormatJson() {
 		*logger, spanId = l.addSpan(l.ctx, logger)
 	}
 	*logger, field = l.addExField(l.ctx, logger, fieldMap)
-	if l.formatJson() {
+	if l.FormatJson() {
 		newLine = ""
 	} else {
 		newLine = "\n"
@@ -277,9 +297,6 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 
 // WithCallerSkip  携带跳过的层数
 func (l *Zlogger) WithCallerSkip(skip int) *Zlogger {
-	if skip <= 0 {
-		return l
-	}
 	return &Zlogger{
 		ctx:        l.ctx,
 		callerSkip: skip,

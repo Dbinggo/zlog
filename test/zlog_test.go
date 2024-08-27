@@ -7,6 +7,8 @@ import (
 	"github.com/dbinggo/zlog/zapx"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.uber.org/zap"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"testing"
 )
 
@@ -31,5 +33,17 @@ func TestLogx(t *testing.T) {
 	logx.WithContext(ctx).Debug("redis中未找到数据")
 }
 func TestGormLogger(t *testing.T) {
+	zlogger := zapx.Develop(utils.GetRootPath(""))
+	zlog.NewGormLogger(zlogger)
+	db, err := gorm.Open(mysql.Open("root:13131227873@tcp(123.207.73.185:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{
+		Logger: zlog.NewGormLogger(zlogger),
+	})
 	// todo
+	type yjddbTest struct {
+		age int
+	}
+	err = db.AutoMigrate(yjddbTest{})
+	if err != nil {
+		zlog.WarnfCtx(context.Background(), "AutoMigrate %v", err)
+	}
 }

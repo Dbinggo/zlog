@@ -23,13 +23,15 @@ type zeroWriter struct {
 	logger *Zlogger
 }
 
+const zeroCallerSkip = 0
+
 var _ logx.Writer = (*zeroWriter)(nil) // 接口实现检查
 func NewZeroWriter(logger *Zlogger) logx.Writer {
 	return &zeroWriter{logger: logger}
 }
 
 func (l *zeroWriter) Alert(v interface{}) {
-	l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v))
+	l.logger.WithCallerSkip(zeroCallerSkip).errorf(fmt.Sprint(v))
 }
 
 func (l *zeroWriter) Close() error {
@@ -38,43 +40,43 @@ func (l *zeroWriter) Close() error {
 
 func (l *zeroWriter) Debug(v interface{}, fields ...logx.LogField) {
 
-	l.logger.WithCallerSkip(6).debugField(fmt.Sprint(v), toZapFields(fields...)...)
+	l.logger.WithCallerSkip(zeroCallerSkip).debugField(fmt.Sprint(v), toZapFields(fields...)...)
 
 }
 
 func (l *zeroWriter) Error(v interface{}, fields ...logx.LogField) {
 
-	l.logger.WithCallerSkip(6).errorField(fmt.Sprint(v), toZapFields(fields...)...)
+	l.logger.WithCallerSkip(zeroCallerSkip).errorField(fmt.Sprint(v), toZapFields(fields...)...)
 
 }
 
 func (l *zeroWriter) Info(v interface{}, fields ...logx.LogField) {
 
-	l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
+	l.logger.WithCallerSkip(zeroCallerSkip).infoField(fmt.Sprint(v), toZapFields(fields...)...)
 
 }
 
 func (l *zeroWriter) Severe(v interface{}) {
-	l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v))
+	l.logger.WithCallerSkip(zeroCallerSkip).errorf(fmt.Sprint(v))
 }
 
 func (l *zeroWriter) Slow(v interface{}, fields ...logx.LogField) {
 
-	l.logger.WithCallerSkip(6).warnField(fmt.Sprint(v), toZapFields(fields...)...)
+	l.logger.WithCallerSkip(zeroCallerSkip).warnField(fmt.Sprint(v), toZapFields(fields...)...)
 
 }
 
 func (l *zeroWriter) Stack(v interface{}) {
-	if l.logger.formatJson() {
-		l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v), zap.Stack("stack"))
+	if l.logger.FormatJson() {
+		l.logger.WithCallerSkip(zeroCallerSkip).errorf(fmt.Sprint(v), zap.Stack("stack"))
 	} else {
-		l.logger.WithCallerSkip(6).errorf(fmt.Sprint(v))
+		l.logger.WithCallerSkip(zeroCallerSkip).errorf(fmt.Sprint(v))
 	}
 }
 
 func (l *zeroWriter) Stat(v interface{}, fields ...logx.LogField) {
 
-	l.logger.WithCallerSkip(6).infoField(fmt.Sprint(v), toZapFields(fields...)...)
+	l.logger.WithCallerSkip(zeroCallerSkip).infoField(fmt.Sprint(v), toZapFields(fields...)...)
 
 }
 

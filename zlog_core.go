@@ -161,9 +161,6 @@ func (l *Zlogger) errorf(format string, v ...any) {
 // ###########################################
 // 通用功能方法
 func (l *Zlogger) getCallerSkip() int {
-	if l.callerSkip == 0 {
-		return 3
-	}
 	return l.callerSkip
 }
 

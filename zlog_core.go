@@ -150,6 +150,7 @@ func (l *Zlogger) warnf(format string, v ...any) {
 	logger.Warn(fmt.Sprintf(exString+format, v...))
 }
 func (l *Zlogger) errorf(format string, v ...any) {
+	printStack()
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Error(fmt.Sprintf(exString+format, v...))
@@ -339,4 +340,19 @@ func (l *Zlogger) errorField(msg string, fields ...zap.Field) {
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger, fields...)
 	logger.Error(fmt.Sprintf(exString + msg))
+}
+func printStack() {
+	// 获取调用栈的程序计数器
+	pc := make([]uintptr, 10)
+	n := runtime.Callers(2, pc)
+	frames := runtime.CallersFrames(pc[:n])
+
+	// 遍历调用栈帧
+	for {
+		frame, more := frames.Next()
+		fmt.Printf("%s\n\t%s:%d\n", frame.Function, frame.File, frame.Line)
+		if !more {
+			break
+		}
+	}
 }

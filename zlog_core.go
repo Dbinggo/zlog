@@ -150,7 +150,6 @@ func (l *Zlogger) warnf(format string, v ...any) {
 	logger.Warn(fmt.Sprintf(exString+format, v...))
 }
 func (l *Zlogger) errorf(format string, v ...any) {
-	printStack()
 	logger := withContext(l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Error(fmt.Sprintf(exString+format, v...))

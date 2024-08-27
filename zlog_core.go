@@ -177,7 +177,7 @@ func (l *Zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
 	if callerSkip == 0 {
 		for i := 0; ; i++ {
 			_, file, line, _ = runtime.Caller(i)
-			if len(file) == len(basePath) && file[:len(basePath)] == basePath {
+			if len(file) >= len(basePath) && file[:len(basePath)] == basePath {
 				file = file[len(basePath)+1:]
 				break
 			}

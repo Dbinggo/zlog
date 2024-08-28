@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"runtime"
+	"slices"
 )
 
 const (
@@ -195,7 +196,7 @@ func (l *Zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
 		_logger = _logger.With(zap.String(loggerCallerKey, fmt.Sprintf(format, file, line)))
 		return *_logger, ""
 	}
-	return *_logger, fmt.Sprintf(format+"\t", _v...)
+	return *_logger, fmt.Sprintf(format+" \t", _v...)
 }
 
 func (l *Zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
@@ -229,13 +230,16 @@ func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap 
 			_logger = _logger.With(exField.([]zapcore.Field)...)
 			return *_logger, ""
 		} else {
-			format := "%v\t"
+			format := "%v \t"
 			ret := ""
 			for _, field := range exField.([]zapcore.Field) {
 				// 如果传入的 fieldMap 含有这个key 那么就用fieldMap中的值
-				if fieldString, exit := fieldMap[field.Key]; exit {
-					ret += fmt.Sprintf(format, fieldString)
-				} else {
+				//if fieldString, exit := fieldMap[field.Key]; exit {
+				//	ret += fmt.Sprintf(format, fieldString)
+				//} else {
+				//	ret += fmt.Sprintf(format, field.String)
+				//}
+				if !slices.Contains([]string{loggerCallerKey, loggerTraceKey, loggerSpanKey}, field.Key) {
 					ret += fmt.Sprintf(format, field.String)
 				}
 			}
@@ -270,19 +274,23 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 		traceId string
 		spanId  string
 		field   string
-		exist   bool
+		//exist   bool
 		newLine string
 	)
 	// 如果map 中不存在 caller 那么使用自己的caller
-	if caller, exist = fieldMap[loggerCallerKey]; !exist || l.FormatJson() {
-		*logger, caller = l.addCaller(logger)
-	}
-	if traceId, exist = fieldMap[loggerTraceKey]; !exist || l.FormatJson() {
-		*logger, traceId = l.addTrace(l.ctx, logger)
-	}
-	if spanId, exist = fieldMap[loggerSpanKey]; !exist || l.FormatJson() {
-		*logger, spanId = l.addSpan(l.ctx, logger)
-	}
+	//if caller, exist = fieldMap[loggerCallerKey]; !exist || l.FormatJson() {
+	//	*logger, caller = l.addCaller(logger)
+	//}
+	//if traceId, exist = fieldMap[loggerTraceKey]; !exist || l.FormatJson() {
+	//	*logger, traceId = l.addTrace(l.ctx, logger)
+	//}
+	//if spanId, exist = fieldMap[loggerSpanKey]; !exist || l.FormatJson() {
+	//	*logger, spanId = l.addSpan(l.ctx, logger)
+	//}
+	*logger, caller = l.addCaller(logger)
+	*logger, traceId = l.addTrace(l.ctx, logger)
+	*logger, spanId = l.addSpan(l.ctx, logger)
+
 	*logger, field = l.addExField(l.ctx, logger, fieldMap)
 	if l.FormatJson() {
 		newLine = ""

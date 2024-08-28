@@ -207,7 +207,7 @@ func (l *Zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger
 		_logger = _logger.With(zap.String(loggerTraceKey, traceId))
 		return *_logger, ""
 	}
-	format := "%v\t"
+	format := "%v \t"
 	return *_logger, fmt.Sprintf(format, traceId)
 }
 func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
@@ -220,7 +220,7 @@ func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger,
 		_logger = _logger.With(zap.String(loggerSpanKey, spanId))
 		return *_logger, ""
 	}
-	format := "%v\t"
+	format := "%v \t"
 	return *_logger, fmt.Sprintf(format, spanId)
 }
 func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap map[string]string) (zap.Logger, string) {
@@ -277,20 +277,20 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 		newLine string
 	)
 	// 如果map 中不存在 caller 那么使用自己的caller
-	//if caller, exist = fieldMap[loggerCallerKey]; !exist || l.FormatJson() {
-	//	*logger, caller = l.addCaller(logger)
+	if caller, exist = fieldMap[loggerCallerKey]; !exist || l.FormatJson() {
+		*logger, caller = l.addCaller(logger)
+	}
+	//if traceId, exist = fieldMap[loggerTraceKey]; !exist || l.FormatJson() {
+	//	*logger, traceId = l.addTrace(l.ctx, logger)
 	//}
-	if traceId, exist = fieldMap[loggerTraceKey]; !exist || l.FormatJson() {
-		*logger, traceId = l.addTrace(l.ctx, logger)
-	}
-	if spanId, exist = fieldMap[loggerSpanKey]; !exist || l.FormatJson() {
-		*logger, spanId = l.addSpan(l.ctx, logger)
-	}
-	*logger, caller = l.addCaller(logger)
-	//*logger, traceId = l.addTrace(l.ctx, logger)
-	//*logger, spanId = l.addSpan(l.ctx, logger)
+	//if spanId, exist = fieldMap[loggerSpanKey]; !exist || l.FormatJson() {
+	//	*logger, spanId = l.addSpan(l.ctx, logger)
+	//}
+	//*logger, caller = l.addCaller(logger)
+	*logger, traceId = l.addTrace(l.ctx, logger)
+	*logger, spanId = l.addSpan(l.ctx, logger)
 
-	*logger, field = l.addExField(l.ctx, logger, fieldMap)
+	//*logger, field = l.addExField(l.ctx, logger, fieldMap)
 	if l.FormatJson() {
 		newLine = ""
 	} else {

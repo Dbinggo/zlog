@@ -274,13 +274,13 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 		newLine string
 	)
 	// 如果map 中不存在 caller 那么使用自己的caller
-	if caller, exist = fieldMap["caller"]; !exist || l.FormatJson() {
+	if caller, exist = fieldMap[loggerCallerKey]; !exist || l.FormatJson() {
 		*logger, caller = l.addCaller(logger)
 	}
-	if traceId, exist = fieldMap["trace"]; !exist || l.FormatJson() {
+	if traceId, exist = fieldMap[loggerTraceKey]; !exist || l.FormatJson() {
 		*logger, traceId = l.addTrace(l.ctx, logger)
 	}
-	if spanId, exist = fieldMap["span"]; !exist || l.FormatJson() {
+	if spanId, exist = fieldMap[loggerSpanKey]; !exist || l.FormatJson() {
 		*logger, spanId = l.addSpan(l.ctx, logger)
 	}
 	*logger, field = l.addExField(l.ctx, logger, fieldMap)

@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"runtime"
-	"slices"
 )
 
 const (
@@ -234,14 +233,14 @@ func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap 
 			ret := ""
 			for _, field := range exField.([]zapcore.Field) {
 				// 如果传入的 fieldMap 含有这个key 那么就用fieldMap中的值
-				//if fieldString, exit := fieldMap[field.Key]; exit {
-				//	ret += fmt.Sprintf(format, fieldString)
-				//} else {
-				//	ret += fmt.Sprintf(format, field.String)
-				//}
-				if !slices.Contains([]string{loggerCallerKey, loggerTraceKey, loggerSpanKey}, field.Key) {
+				if fieldString, exit := fieldMap[field.Key]; exit {
+					ret += fmt.Sprintf(format, fieldString)
+				} else {
 					ret += fmt.Sprintf(format, field.String)
 				}
+				//if !slices.Contains([]string{loggerCallerKey, loggerTraceKey, loggerSpanKey}, field.Key) {
+				//	ret += fmt.Sprintf(format, field.String)
+				//}
 			}
 			return *_logger, ret
 		}

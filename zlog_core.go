@@ -66,14 +66,14 @@ func NewLogger() *Zlogger {
 }
 
 // withContext 从上下文中拿到logger
-func withContext(ctx context.Context) zap.Logger {
+func withContext(ctx *context.Context) zap.Logger {
 	if ctx == nil {
 		return *globalZapLogger
 	}
-	logger := ctx.Value(loggerKey)
+	logger := (*ctx).Value(loggerKey)
 	if logger == nil {
 		logger = *globalZapLogger
-		context.WithValue(ctx, loggerKey, &logger)
+		*ctx = context.WithValue(*ctx, loggerKey, &logger)
 	}
 	return logger.(zap.Logger)
 }
@@ -135,22 +135,22 @@ func (l *Zlogger) Errorf(format string, v ...any) {
 // ###########################################
 // 内部方法
 func (l *Zlogger) debugf(format string, v ...any) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Debug(fmt.Sprintf(exString+format, v...))
 }
 func (l *Zlogger) infof(format string, v ...any) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Info(fmt.Sprintf(exString+format, v...))
 }
 func (l *Zlogger) warnf(format string, v ...any) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Warn(fmt.Sprintf(exString+format, v...))
 }
 func (l *Zlogger) errorf(format string, v ...any) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger)
 	logger.Error(fmt.Sprintf(exString+format, v...))
 }
@@ -309,7 +309,7 @@ func (l *Zlogger) WithCallerSkip(skip int) *Zlogger {
 	}
 }
 func (l *Zlogger) Sync() error {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	return logger.Sync()
 }
 
@@ -325,22 +325,22 @@ func (l *Zlogger) WithContext(ctx context.Context) *Zlogger {
 
 // 供外部方法使用
 func (l *Zlogger) debugField(msg string, fields ...zap.Field) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger, fields...)
 	logger.Debug(fmt.Sprintf(exString + msg))
 }
 func (l *Zlogger) infoField(msg string, fields ...zap.Field) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger, fields...)
 	logger.Info(fmt.Sprintf(exString + msg))
 }
 func (l *Zlogger) warnField(msg string, fields ...zap.Field) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger, fields...)
 	logger.Warn(fmt.Sprintf(exString + msg))
 }
 func (l *Zlogger) errorField(msg string, fields ...zap.Field) {
-	logger := withContext(l.ctx)
+	logger := withContext(&l.ctx)
 	logger, exString := l.buildField(&logger, fields...)
 	logger.Error(fmt.Sprintf(exString + msg))
 }

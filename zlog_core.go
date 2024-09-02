@@ -280,17 +280,10 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 	if caller, exist = fieldMap[loggerCallerKey]; !exist || l.FormatJson() {
 		*logger, caller = l.addCaller(logger)
 	}
-	//if traceId, exist = fieldMap[loggerTraceKey]; !exist || l.FormatJson() {
-	//	*logger, traceId = l.addTrace(l.ctx, logger)
-	//}
-	//if spanId, exist = fieldMap[loggerSpanKey]; !exist || l.FormatJson() {
-	//	*logger, spanId = l.addSpan(l.ctx, logger)
-	//}
-	//*logger, caller = l.addCaller(logger)
 	*logger, traceId = l.addTrace(l.ctx, logger)
 	*logger, spanId = l.addSpan(l.ctx, logger)
 
-	//*logger, field = l.addExField(l.ctx, logger, fieldMap)
+	*logger, field = l.addExField(l.ctx, logger, fieldMap)
 	if l.FormatJson() {
 		newLine = ""
 	} else {

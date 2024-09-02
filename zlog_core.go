@@ -195,7 +195,7 @@ func (l *Zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
 		_logger = _logger.With(zap.String(loggerCallerKey, fmt.Sprintf(format, file, line)))
 		return *_logger, ""
 	}
-	return *_logger, fmt.Sprintf(format+" \t", _v...)
+	return *_logger, fmt.Sprintf(format+"\t", _v...)
 }
 
 func (l *Zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
@@ -207,7 +207,7 @@ func (l *Zlogger) addTrace(ctx context.Context, _logger *zap.Logger) (zap.Logger
 		_logger = _logger.With(zap.String(loggerTraceKey, traceId))
 		return *_logger, ""
 	}
-	format := "%v \t"
+	format := "%v\t"
 	return *_logger, fmt.Sprintf(format, traceId)
 }
 func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger, string) {
@@ -220,7 +220,7 @@ func (l *Zlogger) addSpan(ctx context.Context, _logger *zap.Logger) (zap.Logger,
 		_logger = _logger.With(zap.String(loggerSpanKey, spanId))
 		return *_logger, ""
 	}
-	format := "%v \t"
+	format := "%v\t"
 	return *_logger, fmt.Sprintf(format, spanId)
 }
 func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap map[string]string) (zap.Logger, string) {
@@ -229,7 +229,7 @@ func (l *Zlogger) addExField(ctx context.Context, _logger *zap.Logger, fieldMap 
 			_logger = _logger.With(exField.([]zapcore.Field)...)
 			return *_logger, ""
 		} else {
-			format := "%v \t"
+			format := "%v\t"
 			ret := ""
 			for _, field := range exField.([]zapcore.Field) {
 				// 如果传入的 fieldMap 含有这个key 那么就用fieldMap中的值

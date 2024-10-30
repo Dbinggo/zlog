@@ -24,6 +24,10 @@ const (
 
 )
 
+var (
+	emptyCtx = context.Background()
+)
+
 // 这是一个 最底层的对象 其余接口实现的对象都调用此对象
 /*
 	-----------------   	-----------------
@@ -67,7 +71,7 @@ func NewLogger() *Zlogger {
 
 // withContext 从上下文中拿到logger
 func withContext(ctx *context.Context) zap.Logger {
-	if ctx == nil {
+	if *ctx == nil {
 		return *globalZapLogger
 	}
 	logger := (*ctx).Value(loggerKey)
@@ -82,54 +86,54 @@ func withContext(ctx *context.Context) zap.Logger {
 // 可以直接通过 包名来使用
 func DebugfCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(coreCallSkip).debugf(format, v...)
+	l.debugf(format, v...)
 }
 func Debugf(format string, v ...any) {
-	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(coreCallSkip).debugf(format, v...)
+	l := &Zlogger{ctx: emptyCtx, format: formatJson}
+	l.debugf(format, v...)
 
 }
 func InfofCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(coreCallSkip).infof(format, v...)
+	l.infof(format, v...)
 }
 func Infof(format string, v ...any) {
-	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(coreCallSkip).infof(format, v...)
+	l := &Zlogger{ctx: emptyCtx, format: formatJson}
+	l.infof(format, v...)
 
 }
 func WarnfCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(coreCallSkip).warnf(format, v...)
+	l.warnf(format, v...)
 }
 func Warnf(format string, v ...any) {
-	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(coreCallSkip).warnf(format, v...)
+	l := &Zlogger{ctx: emptyCtx, format: formatJson}
+	l.warnf(format, v...)
 
 }
 func ErrorfCtx(ctx context.Context, format string, v ...any) {
 	l := &Zlogger{ctx: ctx, format: formatJson}
-	l.WithCallerSkip(coreCallSkip).errorf(format, v...)
+	l.errorf(format, v...)
 }
 func Errorf(format string, v ...any) {
-	l := &Zlogger{ctx: context.Background(), format: formatJson}
-	l.WithCallerSkip(coreCallSkip).errorf(format, v...)
+	l := &Zlogger{ctx: emptyCtx, format: formatJson}
+	l.errorf(format, v...)
 
 }
 
 // ###########################################
 // 通过对象来使用
 func (l *Zlogger) Debugf(format string, v ...any) {
-	l.WithCallerSkip(coreCallSkip).debugf(format, v)
+	l.debugf(format, v)
 }
 func (l *Zlogger) Infof(format string, v ...any) {
-	l.WithCallerSkip(coreCallSkip).infof(format, v)
+	l.infof(format, v)
 }
 func (l *Zlogger) Warnf(format string, v ...any) {
-	l.WithCallerSkip(coreCallSkip).warnf(format, v)
+	l.warnf(format, v)
 }
 func (l *Zlogger) Errorf(format string, v ...any) {
-	l.WithCallerSkip(coreCallSkip).errorf(format, v)
+	l.errorf(format, v)
 }
 
 // ###########################################
@@ -168,7 +172,7 @@ func (l *Zlogger) FormatJson() bool {
 }
 
 func (l *Zlogger) addCaller(_logger *zap.Logger) (zap.Logger, string) {
-	callerSkip := l.getCallerSkip()
+	callerSkip := l.getCallerSkip() + coreCallSkip
 	var file string
 	var line int
 	_v := make([]interface{}, 0)
@@ -296,7 +300,7 @@ func (l *Zlogger) buildField(logger *zap.Logger, fields ...zap.Field) (zap.Logge
 func (l *Zlogger) WithCallerSkip(skip int) *Zlogger {
 	return &Zlogger{
 		ctx:        l.ctx,
-		callerSkip: skip,
+		callerSkip: l.callerSkip + skip,
 		format:     l.format,
 		prefix:     l.prefix,
 	}
